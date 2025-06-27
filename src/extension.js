@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import * as path from "path";
 import { readFileSync } from "fs";
-
+import { generateCode } from './core/services/code-generator-service.js';
 let webviewPanel;
 
 export function activate(context) {

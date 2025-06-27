@@ -622,7 +622,7 @@ function handleSendMessage() {
   }
 
   // Siempre usar respuestas simuladas por ahora
-  simulateBotResponse(message)
+  sendMessageToBackend(contextMessage);
 
   isWaitingForResponse = true
   updateSendButton()
@@ -631,6 +631,40 @@ function handleSendMessage() {
   setTimeout(() => {
     saveConversationsToStorage()
   }, 100)
+}
+
+async function sendMessageToBackend(promptText) {
+  try {
+    const response = await fetch("https://botified-backend-331043418769.us-central1.run.app/api/prompts/unified", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        prompt: promptText,
+        model: "gpt-4o-mini"
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error HTTP: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    if (data && data.result) {
+      handleBotResponse(data.result);
+    } else {
+      showError("La respuesta del servidor no es válida.");
+      hideTypingIndicator();
+      isWaitingForResponse = false;
+      updateSendButton();
+    }
+  } catch (error) {
+    console.error("Error al llamar a la API:", error);
+    showError("Error al obtener la respuesta.");
+    hideTypingIndicator();
+    isWaitingForResponse = false;
+    updateSendButton();
+  }
 }
 
 function getFileLanguage(fileName) {
@@ -664,526 +698,20 @@ function handleBotResponse(response) {
     updateChatHistoryUI()
   }, 100)
 }
-
-function simulateBotResponse(userMessage) {
-  setTimeout(
-    () => {
-      let response = generateSimulatedResponse(userMessage)
-
-      if (fileIncludedInContext && currentFile) {
-        response = generateFileContextResponse(userMessage, currentFile, response)
-      }
-
-      handleBotResponse(response)
-    },
-    1500 + Math.random() * 1000,
-  )
-}
-
-function generateSimulatedResponse(userMessage) {
-  const message = userMessage.toLowerCase()
-
-  // Respuestas de saludo
-  if (message.includes("hola") || message.includes("hi") || message.includes("saludos")) {
-    return `## ¡Hola! 👋
-
-¡Bienvenido a **BOTIFIED AI**! Soy tu asistente de código personal.
-
-### **¿En qué puedo ayudarte hoy?**
-- 🔍 **Análisis de código** - Reviso y optimizo tu código
-- 🐛 **Debugging** - Te ayudo a encontrar y solucionar errores
-- 📚 **Explicaciones** - Conceptos de programación y mejores prácticas
-- 🚀 **Optimización** - Mejoro el rendimiento de tus aplicaciones
-
-### **Consejos rápidos:**
-- Incluye archivos en el contexto para análisis específico
-- Pregúntame sobre cualquier lenguaje de programación
-- Usa las tarjetas de sugerencia para empezar
-
-¿Hay algo específico en lo que pueda ayudarte?`
-  }
-
-  if (message.includes("gracias") || message.includes("thanks")) {
-    return `## ¡De nada! 😊
-
-Me alegra poder ayudarte. Estoy aquí siempre que necesites:
-
-- Resolver dudas de código
-- Optimizar tu aplicación  
-- Explicar conceptos complejos
-- Revisar tu arquitectura
-
-¿Hay algo más en lo que pueda asistirte?`
-  }
-
-  // Respuestas específicas según el contenido del mensaje
-  if (message.includes("solid") || message.includes("principios")) {
-    return `## Principios SOLID en Programación
-
-Los principios SOLID son cinco principios fundamentales del diseño de software orientado a objetos:
-
-### 1. **S** - Single Responsibility Principle (SRP)
-Una clase debe tener una sola razón para cambiar. Cada clase debe tener una única responsabilidad.
-
-\`\`\`javascript
-// ❌ Malo: múltiples responsabilidades
-class User {
-  constructor(name, email) {
-    this.name = name;
-    this.email = email;
-  }
-  
-  save() { /* guardar en BD */ }
-  sendEmail() { /* enviar email */ }
-  validateEmail() { /* validar email */ }
-}
-
-// ✅ Bueno: responsabilidad única
-class User {
-  constructor(name, email) {
-    this.name = name;
-    this.email = email;
-  }
-}
-
-class UserRepository {
-  save(user) { /* guardar en BD */ }
-}
-
-class EmailService {
-  send(user, message) { /* enviar email */ }
-}
-\`\`\`
-
-### 2. **O** - Open/Closed Principle (OCP)
-Las entidades deben estar abiertas para extensión pero cerradas para modificación.
-
-### 3. **L** - Liskov Substitution Principle (LSP)
-Los objetos de una superclase deben ser reemplazables por objetos de sus subclases.
-
-### 4. **I** - Interface Segregation Principle (ISP)
-Los clientes no deben depender de interfaces que no usan.
-
-### 5. **D** - Dependency Inversion Principle (DIP)
-Depende de abstracciones, no de concreciones.
-
-¿Te gustaría que profundice en algún principio específico?`
-  }
-
-  if (message.includes("optimiz") || message.includes("rendimiento") || message.includes("performance")) {
-    return `## Optimización de Rendimiento Web 🚀
-
-Aquí tienes las mejores prácticas para optimizar tu aplicación:
-
-### **Frontend**
-1. **Lazy Loading**
-   \`\`\`javascript
-   // Carga diferida de componentes
-   const LazyComponent = React.lazy(() => import('./Component'));
-   \`\`\`
-
-2. **Code Splitting**
-   \`\`\`javascript
-   // División de código con Webpack
-   import(/* webpackChunkName: "feature" */ './feature')
-     .then(module => module.default());
-   \`\`\`
-
-3. **Optimización de imágenes**
-   - Usar formatos modernos (WebP, AVIF)
-   - Implementar responsive images
-   - Comprimir imágenes
-
-### **Backend**
-1. **Caching**
-   \`\`\`javascript
-   // Redis para cache
-   const cached = await redis.get(key);
-   if (cached) return JSON.parse(cached);
-   \`\`\`
-
-2. **Database Optimization**
-   - Índices apropiados
-   - Consultas optimizadas
-   - Connection pooling
-
-### **Métricas Clave**
-- **FCP** (First Contentful Paint) < 1.8s
-- **LCP** (Largest Contentful Paint) < 2.5s
-- **CLS** (Cumulative Layout Shift) < 0.1
-
-¿Qué área específica te gustaría optimizar?`
-  }
-
-  if (message.includes("revisar") || message.includes("review") || message.includes("mejorar")) {
-    return `## Code Review y Mejores Prácticas ✨
-
-Te ayudo a revisar y mejorar tu código. Aquí tienes algunos puntos clave:
-
-### **Legibilidad**
-\`\`\`javascript
-// ❌ Difícil de leer
-const u = users.filter(u => u.a && u.s === 'active').map(u => ({...u, n: u.name.toUpperCase()}));
-
-// ✅ Claro y legible
-const activeUsers = users
-  .filter(user => user.isActive && user.status === 'active')
-  .map(user => ({
-    ...user,
-    displayName: user.name.toUpperCase()
-  }));
-\`\`\`
-
-### **Manejo de Errores**
-\`\`\`javascript
-// ✅ Manejo robusto
-async function fetchUserData(id) {
-  try {
-    const response = await api.get(\`/users/\${id}\`);
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching user:', error);
-    throw new Error('Failed to fetch user data');
-  }
-}
-\`\`\`
-
-### **Checklist de Code Review**
-- [ ] ¿El código es fácil de entender?
-- [ ] ¿Hay manejo adecuado de errores?
-- [ ] ¿Se siguen las convenciones del proyecto?
-- [ ] ¿Hay tests unitarios?
-- [ ] ¿Se evita la duplicación de código?
-
-**¿Tienes código específico que te gustaría que revise?** Puedes incluir el archivo en el contexto y te daré feedback detallado.`
-  }
-
-  if (message.includes("patrón") || message.includes("pattern") || message.includes("diseño")) {
-    return `## Patrones de Diseño en JavaScript 🎯
-
-Los patrones de diseño son soluciones reutilizables a problemas comunes:
-
-### **1. Singleton**
-\`\`\`javascript
-class DatabaseConnection {
-  constructor() {
-    if (DatabaseConnection.instance) {
-      return DatabaseConnection.instance;
-    }
-    
-    this.connection = this.createConnection();
-    DatabaseConnection.instance = this;
-    return this;
-  }
-  
-  createConnection() {
-    // Lógica de conexión
-    return { connected: true };
-  }
-}
-
-const db1 = new DatabaseConnection();
-const db2 = new DatabaseConnection();
-console.log(db1 === db2); // true
-\`\`\`
-
-### **2. Observer**
-\`\`\`javascript
-class EventEmitter {
-  constructor() {
-    this.events = {};
-  }
-  
-  on(event, callback) {
-    if (!this.events[event]) {
-      this.events[event] = [];
-    }
-    this.events[event].push(callback);
-  }
-  
-  emit(event, data) {
-    if (this.events[event]) {
-      this.events[event].forEach(callback => callback(data));
-    }
-  }
-}
-\`\`\`
-
-### **3. Factory**
-\`\`\`javascript
-class UserFactory {
-  static createUser(type, data) {
-    switch (type) {
-      case 'admin':
-        return new AdminUser(data);
-      case 'regular':
-        return new RegularUser(data);
-      default:
-        throw new Error('Unknown user type');
-    }
-  }
-}
-\`\`\`
-
-### **4. Module Pattern**
-\`\`\`javascript
-const Calculator = (function() {
-  let result = 0;
-  
-  return {
-    add: (x) => result += x,
-    subtract: (x) => result -= x,
-    getResult: () => result,
-    reset: () => result = 0
-  };
-})();
-\`\`\`
-
-¿Qué patrón te interesa implementar en tu proyecto?`
-  }
-
-  if (message.includes("async") || message.includes("await") || message.includes("promesa")) {
-    return `## Async/Await en JavaScript ⚡
-
-Te explico todo sobre programación asíncrona:
-
-### **Conceptos Básicos**
-\`\`\`javascript
-// Promise básica
-function fetchData() {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      resolve('Datos obtenidos');
-    }, 1000);
-  });
-}
-
-// Usando async/await
-async function getData() {
-  try {
-    const data = await fetchData();
-    console.log(data); // "Datos obtenidos"
-    return data;
-  } catch (error) {
-    console.error('Error:', error);
-  }
-}
-\`\`\`
-
-### **Múltiples Operaciones Asíncronas**
-\`\`\`javascript
-// ❌ Secuencial (lento)
-async function slowWay() {
-  const user = await fetchUser();
-  const posts = await fetchPosts();
-  const comments = await fetchComments();
-  return { user, posts, comments };
-}
-
-// ✅ Paralelo (rápido)
-async function fastWay() {
-  const [user, posts, comments] = await Promise.all([
-    fetchUser(),
-    fetchPosts(),
-    fetchComments()
-  ]);
-  return { user, posts, comments };
-}
-\`\`\`
-
-### **Manejo de Errores Avanzado**
-\`\`\`javascript
-async function robustFetch(url, retries = 3) {
-  for (let i = 0; i < retries; i++) {
-    try {
-      const response = await fetch(url);
-      if (!response.ok) throw new Error(\`HTTP \${response.status}\`);
-      return await response.json();
-    } catch (error) {
-      if (i === retries - 1) throw error;
-      await new Promise(resolve => setTimeout(resolve, 1000 * i));
-    }
-  }
-}
-\`\`\`
-
-### **Async Iterators**
-\`\`\`javascript
-async function* generateNumbers() {
-  for (let i = 0; i < 5; i++) {
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    yield i;
-  }
-}
-
-// Uso
-for await (const num of generateNumbers()) {
-  console.log(num); // 0, 1, 2, 3, 4 (cada segundo)
-}
-\`\`\`
-
-¿Tienes algún caso específico de async/await que te esté dando problemas?`
-  }
-
-  if (message.includes("error") || message.includes("bug") || message.includes("problema")) {
-    return `## Análisis de Error 🐛
-
-He analizado tu problema y aquí hay algunas posibles soluciones:
-
-### **Pasos para Debugging**
-1. **Verifica la sintaxis** - A menudo los errores más comunes son por sintaxis incorrecta
-2. **Revisa las dependencias** - Asegúrate de que todas las dependencias estén instaladas
-3. **Comprueba los logs** - Los mensajes de error suelen dar pistas importantes
-4. **Usa el debugger** - Coloca breakpoints para inspeccionar el estado
-
-### **Herramientas de Debugging**
-\`\`\`javascript
-// Console debugging
-console.log('Variable value:', variable);
-console.table(arrayData);
-console.trace('Call stack');
-
-// Try-catch para errores
-try {
-  riskyOperation();
-} catch (error) {
-  console.error("Error específico:", error.message);
-  console.error("Stack trace:", error.stack);
-}
-
-// Debugger statement
-function problematicFunction() {
-  debugger; // Pausa la ejecución aquí
-  // Tu código problemático
-}
-\`\`\`
-
-### **Errores Comunes y Soluciones**
-- **TypeError**: Verificar tipos de datos
-- **ReferenceError**: Variable no definida
-- **SyntaxError**: Revisar sintaxis
-- **Promise rejection**: Agregar .catch() o try/catch
-
-¿Puedes compartir el mensaje de error exacto que estás recibiendo?`
-  }
-
-  // Respuesta genérica para otros casos
-  return `## Respuesta de BOTIFIED AI 🤖
-
-Gracias por tu pregunta: **"${userMessage}"**
-
-Como tu asistente de código, puedo ayudarte con:
-
-### **Análisis de Código**
-- Revisión y optimización
-- Detección de bugs
-- Mejores prácticas
-
-### **Explicaciones Técnicas**
-- Conceptos de programación
-- Patrones de diseño
-- Arquitectura de software
-
-### **Solución de Problemas**
-- Debugging paso a paso
-- Refactoring de código
-- Optimización de rendimiento
-
-### **Tecnologías que domino:**
-\`\`\`
-JavaScript/TypeScript  React/Vue/Angular
-Node.js/Express       Python/Django
-SQL/NoSQL            Git/DevOps
-\`\`\`
-
-**💡 Tip:** Para obtener ayuda más específica, puedes:
-1. Incluir un archivo en el contexto usando el botón del sidebar
-2. Hacer preguntas más específicas sobre tu código
-3. Describir el problema que estás enfrentando
-
-¿En qué puedo ayudarte específicamente?`
-}
-
-function generateFileContextResponse(userMessage, file, baseResponse) {
-  const fileExtension = file.name.split(".").pop().toLowerCase()
-  const fileName = file.name
-
-  return `## Análisis de ${fileName} 📁
-
-He analizado tu archivo **${fileName}** y basándome en tu pregunta: *"${userMessage}"*
-
-### **Información del Archivo**
-- **Nombre:** ${fileName}
-- **Ruta:** ${file.path}
-- **Tipo:** ${getFileTypeDescription(fileExtension)}
-
-### **Análisis Contextual**
-${baseResponse}
-
-### **Recomendaciones Específicas para tu Archivo**
-${generateFileSpecificRecommendations(fileExtension, fileName)}
-
----
-*💡 Estoy analizando el contenido completo de tu archivo para darte respuestas más precisas y contextualizadas.*`
-}
-
-function getFileTypeDescription(extension) {
-  const descriptions = {
-    js: "JavaScript - Archivo de lógica del lado cliente/servidor",
-    ts: "TypeScript - JavaScript con tipado estático",
-    jsx: "React JSX - Componente de React",
-    tsx: "React TypeScript - Componente de React con TypeScript",
-    html: "HTML - Estructura de página web",
-    css: "CSS - Estilos de página web",
-    json: "JSON - Archivo de configuración o datos",
-    md: "Markdown - Documentación",
-    py: "Python - Script de Python",
-    java: "Java - Clase de Java",
-  }
-  return descriptions[extension] || "Archivo de código"
-}
-
-function generateFileSpecificRecommendations(extension, fileName) {
-  switch (extension) {
-    case "js":
-    case "jsx":
-      return `- Considera usar \`const\` y \`let\` en lugar de \`var\`
-- Implementa manejo de errores con try/catch
-- Usa funciones arrow para callbacks
-- Considera agregar JSDoc para documentación`
-
-    case "ts":
-    case "tsx":
-      return `- Aprovecha el sistema de tipos de TypeScript
-- Define interfaces para objetos complejos
-- Usa tipos genéricos cuando sea apropiado
-- Configura strict mode en tsconfig.json`
-
-    case "css":
-      return `- Usa variables CSS para colores y espaciado
-- Implementa metodología BEM para naming
-- Considera usar CSS Grid o Flexbox
-- Optimiza para diferentes dispositivos`
-
-    case "html":
-      return `- Usa etiquetas semánticas (header, nav, main, footer)
-- Agrega atributos alt a las imágenes
-- Implementa meta tags para SEO
-- Valida la accesibilidad (ARIA labels)`
-
-    case "py":
-      return `- Sigue PEP 8 para el estilo de código
-- Usa type hints para mejor legibilidad
-- Implementa docstrings en funciones
-- Considera usar virtual environments`
-
-    default:
-      return `- Mantén el código limpio y bien documentado
-- Sigue las convenciones del lenguaje
-- Implementa tests unitarios
-- Usa control de versiones efectivamente`
-  }
-}
+// function simulateBotResponse(userMessage) {
+//   setTimeout(
+//     () => {
+//       let response = generateSimulatedResponse(userMessage)
+
+//       if (fileIncludedInContext && currentFile) {
+//         response = generateFileContextResponse(userMessage, currentFile, response)
+//       }
+
+//       handleBotResponse(response)
+//     },
+//     1500 + Math.random() * 1000,
+//   )
+// }
 
 // Gestión de mensajes
 function addMessage(text, sender, timestamp = new Date()) {
