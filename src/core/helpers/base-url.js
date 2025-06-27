@@ -1,0 +1,1 @@
+export const baseURL = 'https://botified-backend-331043418769.us-central1.run.app/api';
