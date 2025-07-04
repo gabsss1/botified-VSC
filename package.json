@@ -1,10 +1,11 @@
 {
-  "name": "botified-client",
-  "displayName": "botified-client",
+  "name": "botified",
+  "displayName": "Botified",
+  "icon": "./assets/logo.png",
   "description": "AI-powered Visual Studio Code generator",
   "version": "0.0.2",
   "type": "module",
-  "publisher": "botified-extension",
+  "publisher": "Botified",
   "repository": {
     "type": "git",
     "url": "https://github.com/gabsss1/botified-client-vsc"
