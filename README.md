@@ -3,15 +3,14 @@
   <img src="assets/logo.png" alt="Botified Logo" style="max-width: 200px; height: auto; padding-bottom: 30px;">
 </div>
 
-Botified is a powerful Visual Studio Code extension designed to assist developers with code generation, file management, editing tasks, and issue reporting using artificial intelligence.
+Botified is an AI-powered VS Code extension that adds a chat inside the editor to instantly generate code and automatically insert files and folders—all without leaving the IDE.
 
 ## Features
 
 - **Code Generation**: Ask the chatbot for code snippets, solutions, or explanations.
-- **Custom File Management**: Generate files in specific locations and edit them directly.
+- **Custom File Management**: Generate files in specific locations.
 - **Integrated Chat Assistant**: Interact with the chatbot seamlessly within your coding environment.
 - **Keyboard Shortcuts**: Customize shortcuts for quick access to the chatbot.
-- **Issue Reporting**: Easily report issues or bugs directly from the extension.
 
 ## Preview
 
@@ -23,7 +22,7 @@ Botified is a powerful Visual Studio Code extension designed to assist developer
 
 1. Open the command **Open Botified Chat** from the command palette.
 2. Use the shortcut `Ctrl + Alt + 0` on Windows or `Ctrl + Cmd + 0` on macOS to quickly open the chat.
-3. Ask coding-related questions, generate files, or edit existing ones.
+3. Ask coding-related questions and generate files.
 4. Report issues or bugs using the integrated issue reporting feature.
 
 ## Development Guide
