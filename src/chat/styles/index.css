@@ -1202,3 +1202,28 @@ body {
 .app-container.sidebar-open .menu-btn {
   display: none !important;
 }
+
+.generate-file-btn {
+  background-color: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.generate-file-btn:hover {
+  background-color: var(--primary-hover);
+}
+
+.generate-file-btn:active {
+  transform: scale(0.95);
+}
+
+.generate-file-btn:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
