@@ -318,11 +318,20 @@
         <div class="main-content">
           <!-- Chat Header -->
           <div class="chat-header">
+            <div class="header-left">
+              <div class="overlay"></div>
+              <button id="menuToggle" class="menu-btn" title="Menú">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path d="M3 12H21M3 6H21M3 18H21"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+              </button>
             <div class="chat-title">
               <h1>BOTIFIED AI</h1>
               <span class="chat-subtitle"
                 >Tu asistente de código inteligente</span
               >
+            </div>
             </div>
             <div class="chat-actions">
               <button
@@ -752,7 +761,22 @@
           </div>
         </div>
       </div>
-
       <script src="{{SCRIPT_URI}}"></script>
+      <script>
+          (function(){
+            const toggle  = document.getElementById('menuToggle');
+            const app     = document.querySelector('.app-container');
+            const overlay = document.querySelector('.overlay');
+
+            toggle.addEventListener('click', () => {
+              app.classList.toggle('sidebar-open');
+              document.body.classList.toggle('sidebar-open');
+            });
+            overlay.addEventListener('click', () => {
+              app.classList.remove('sidebar-open');
+              document.body.classList.remove('sidebar-open');
+            });
+          })();
+        </script>
     </body>
   </html>

@@ -650,8 +650,8 @@ async function sendMessageToBackend(promptText) {
 
     const data = await response.json();
 
-    if (data && data.result) {
-      handleBotResponse(data.result);
+    if (data && (data.files || data.comments)) {
+      handleBotResponse(data);
     } else {
       showError("La respuesta del servidor no es válida.");
       hideTypingIndicator();
@@ -685,33 +685,100 @@ function getFileLanguage(fileName) {
 }
 
 // Manejo de respuestas
-function handleBotResponse(response) {
-  hideTypingIndicator()
-  addMessage(response, "bot")
-  isWaitingForResponse = false
-  updateSendButton()
-  messageInput.focus()
+function handleBotResponse(data) {
+  hideTypingIndicator();
 
-  // Guardar automáticamente después de recibir respuesta
+  // Soporta comments como string o array
+  let commentsText = "";
+  if (typeof data.comments === "string") {
+    commentsText = data.comments.trim();
+  } else if (Array.isArray(data.comments)) {
+    commentsText = data.comments.join("\n").trim();
+  }
+
+  const hasComments = commentsText.length > 0;
+  const hasFiles = data.files && Array.isArray(data.files) && data.files.length > 0;
+
+  if (hasComments || hasFiles) {
+    // Crear un solo bloque
+    const messageDiv = document.createElement("div");
+    messageDiv.className = "message bot";
+
+    const avatar = document.createElement("div");
+    avatar.className = "message-avatar";
+    avatar.innerHTML = getAIIcon();
+
+    const content = document.createElement("div");
+    content.className = "message-content";
+
+    if (hasComments) {
+      const commentDiv = document.createElement("div");
+      commentDiv.className = "message-text";
+      commentDiv.innerHTML = formatMessage(commentsText);
+      content.appendChild(commentDiv);
+    }
+
+    if (hasFiles) {
+      data.files.forEach((file) => {
+        const fileDiv = document.createElement("div");
+        fileDiv.className = "file-block";
+        fileDiv.innerHTML = `
+          <strong>Archivo:</strong> ${escapeHtml(file.filename)}
+          <pre><code>${escapeHtml(file.content)}</code></pre>
+        `;
+
+        const createButton = document.createElement("button");
+        createButton.className = "generate-file-btn";
+        createButton.textContent = "Crear archivo";
+        createButton.addEventListener("click", () => {
+          if (vscode) {
+            vscode.postMessage({
+              command: "createFiles",
+              files: [{
+                filename: file.filename,
+                content: file.content
+              }]
+            });
+          }
+        });
+
+        fileDiv.appendChild(createButton);
+        content.appendChild(fileDiv);
+      });
+    }
+
+    const messageTime = document.createElement("div");
+    messageTime.className = "message-time";
+    messageTime.textContent = formatTime(new Date());
+    content.appendChild(messageTime);
+
+    messageDiv.appendChild(avatar);
+    messageDiv.appendChild(content);
+
+    messagesArea.appendChild(messageDiv);
+    scrollToBottom(messagesArea);
+
+    // Guardar en historial
+    messageHistory.push({
+      text: hasComments ? commentsText : (hasFiles ? `Archivo: ${data.files[0].filename}` : ""),
+      sender: "bot",
+      timestamp: new Date()
+    });
+
+  } else {
+    addMessage("No se generó contenido.", "bot");
+  }
+
+  isWaitingForResponse = false;
+  updateSendButton();
+  messageInput.focus();
+
   setTimeout(() => {
-    saveConversationsToStorage()
-    updateChatHistoryUI()
-  }, 100)
+    saveConversationsToStorage();
+    updateChatHistoryUI();
+  }, 100);
 }
-// function simulateBotResponse(userMessage) {
-//   setTimeout(
-//     () => {
-//       let response = generateSimulatedResponse(userMessage)
 
-//       if (fileIncludedInContext && currentFile) {
-//         response = generateFileContextResponse(userMessage, currentFile, response)
-//       }
-
-//       handleBotResponse(response)
-//     },
-//     1500 + Math.random() * 1000,
-//   )
-// }
 
 // Gestión de mensajes
 function addMessage(text, sender, timestamp = new Date()) {
@@ -756,15 +823,24 @@ function getAIIcon() {
   </svg>`
 }
 
-function formatMessage(text) {
-  // Formateo básico de markdown
-  text = text.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-  text = text.replace(/\*(.*?)\*/g, "<em>$1</em>")
-  text = text.replace(/```([\s\S]*?)```/g, "<pre><code>$1</code></pre>")
-  text = text.replace(/`([^`]+)`/g, "<code>$1</code>")
-  text = text.replace(/\n/g, "<br>")
+function escapeHtml(unsafe) {
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
 
-  return text
+
+function formatMessage(text) {
+  if (typeof text !== "string") text = "";
+  text = text.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+  text = text.replace(/\*(.*?)\*/g, "<em>$1</em>");
+  text = text.replace(/```([\s\S]*?)```/g, "<pre><code>$1</code></pre>");
+  text = text.replace(/`([^`]+)`/g, "<code>$1</code>");
+  text = text.replace(/\n/g, "<br>");
+  return text;
 }
 
 function formatTime(date) {
