@@ -1062,3 +1062,143 @@ body {
   background: var(--primary);
   color: white;
 }
+/* ————————————————————————————— */
+/* 1) Overlay (oculto por defecto)   */
+/* ————————————————————————————— */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+  z-index: 1000;
+}
+
+/* ————————————————————————————— */
+/* 2) Sidebar off-canvas base       */
+/* ————————————————————————————— */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 280px;           /* ancho por defecto en escritorio */
+  height: 100vh;
+  transform: translateX(-100%);
+  transition: transform 0.3s ease;
+  z-index: 1100;
+}
+
+/* ————————————————————————————— */
+/* 3) Botón hamburguesa base        */
+/* ————————————————————————————— */
+.menu-btn {
+  display: none;          /* se mostrará en media queries */
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  width: 40px;
+  height: 40px;
+  background: var(--surface);
+  border: none;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 1200;
+  transition: background 0.2s ease;
+}
+.menu-btn:hover {
+  background: var(--surface-hover);
+}
+
+/* ————————————————————————————— */
+/* 4) Estado “abierto” (cuando .sidebar-open) */
+/* ————————————————————————————— */
+.app-container.sidebar-open .sidebar {
+  transform: translateX(0);
+}
+.app-container.sidebar-open .overlay {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ————————————————————————————— */
+/* 5) Tablet / pantallas ≤1024px    */
+/* ————————————————————————————— */
+@media (max-width: 1024px) {
+  .menu-btn {
+    display: flex;
+  }
+  /* en tablet también off-canvas, idéntico al desktop */
+}
+
+/* ————————————————————————————— */
+/* 6) Móvil / pantallas ≤640px      */
+/*    (drawer full-screen)          */
+/* ————————————————————————————— */
+@media (max-width: 640px) {
+  .menu-btn {
+    display: flex !important;
+  }
+  .sidebar {
+    width: 100vw;         /* ocupa todo el ancho */
+  }
+}
+
+/* ——————————————————————————————— */
+/* 1) Integrar el botón en la navbar  */
+/* ——————————————————————————————— */
+.chat-header {
+  position: relative;               /* para que el botón use la propia header como referencia */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-left: 56px;               /* deja espacio a la izquierda para el botón */
+}
+
+.menu-btn {
+  position: absolute;               /* lo colocamos sobre la header */
+  top: 50%;                         /* centro vertical */
+  left: 16px;                       /* margen desde el borde */
+  transform: translateY(-50%);      /* ajuste fino del centro */
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  z-index: 1200;                    /* siempre encima */
+}
+.menu-btn:hover {
+  background: var(--surface-hover);
+}
+
+/* ——————————————————————————————— */
+/* 2) Evitar que todo se encoja demasiado */
+/* ——————————————————————————————— */
+.app-container {
+  min-width: 500px;                 /* no dejar que baje de 500px: ajusta a tu gusto */
+}
+
+/* Opcional: en móvil muy estrecho, permitimos scroll horizontal */
+@media (max-width: 500px) {
+  .app-container {
+    min-width: auto;
+  }
+  body {
+    overflow-x: auto;
+  }
+}
+
+.app-container.sidebar-open .menu-btn {
+  display: none !important;
+}
