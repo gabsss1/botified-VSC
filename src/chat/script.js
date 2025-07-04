@@ -1,6 +1,5 @@
-//ts conflics
-/** @type {() => { postMessage: (msg: any) => void }} */
-let acquireVsCodeApi;
+// @ts-ignore
+const vscode = typeof acquireVsCodeApi !== "undefined" ? acquireVsCodeApi() : null;
 // Utilidades DOM
 function $(selector) {
   const el = document.querySelector(selector)
@@ -53,7 +52,6 @@ let isWaitingForResponse = false
 let messageHistory = []
 let currentFile = null
 let fileIncludedInContext = false
-let vscode = null
 
 // Sistema de conversaciones
 let conversations = {}
@@ -121,12 +119,6 @@ function initializeApp() {
   }
 
   updateChatHistoryUI()
-
-  // Inicializar VSCode API
-  if (typeof acquireVsCodeApi !== "undefined") {
-    vscode = acquireVsCodeApi()
-    requestActiveFile()
-  }
 }
 
 // Sistema de gestión de conversaciones
@@ -762,7 +754,8 @@ function handleBotResponse(data) {
     messageHistory.push({
       text: hasComments ? commentsText : (hasFiles ? `Archivo: ${data.files[0].filename}` : ""),
       sender: "bot",
-      timestamp: new Date()
+      timestamp: new Date(),
+      files: hasFiles ? data.files : []
     });
 
   } else {
@@ -782,39 +775,78 @@ function handleBotResponse(data) {
 
 // Gestión de mensajes
 function addMessage(text, sender, timestamp = new Date()) {
-  const messageElement = createMessageElement(text, sender, timestamp)
-  messagesArea.appendChild(messageElement)
+  const msgObj = {
+    text,
+    sender,
+    timestamp,
+    files: [] // Siempre asegúrate de incluir files vacío
+  };
 
-  messageHistory.push({ text, sender, timestamp })
-  scrollToBottom(messagesArea)
+  const messageElement = createMessageElement(msgObj, sender, timestamp);
+  messagesArea.appendChild(messageElement);
+
+  messageHistory.push(msgObj);
+
+  scrollToBottom(messagesArea);
 }
 
-function createMessageElement(text, sender, timestamp) {
-  const messageDiv = document.createElement("div")
-  messageDiv.className = `message ${sender}`
+function createMessageElement(msg, sender, timestamp) {
+  const messageDiv = document.createElement("div");
+  messageDiv.className = `message ${sender}`;
 
-  const avatar = document.createElement("div")
-  avatar.className = "message-avatar"
-  avatar.innerHTML = sender === "user" ? "U" : getAIIcon()
+  const avatar = document.createElement("div");
+  avatar.className = "message-avatar";
+  avatar.innerHTML = sender === "user" ? "U" : getAIIcon();
 
-  const content = document.createElement("div")
-  content.className = "message-content"
+  const content = document.createElement("div");
+  content.className = "message-content";
 
-  const messageText = document.createElement("div")
-  messageText.className = "message-text"
-  messageText.innerHTML = formatMessage(text)
+  if (msg.text) {
+    const messageText = document.createElement("div");
+    messageText.className = "message-text";
+    messageText.innerHTML = formatMessage(msg.text);
+    content.appendChild(messageText);
+  }
 
-  const messageTime = document.createElement("div")
-  messageTime.className = "message-time"
-  messageTime.textContent = formatTime(timestamp)
+  if (msg.files && msg.files.length > 0) {
+    msg.files.forEach((file) => {
+      const fileDiv = document.createElement("div");
+      fileDiv.className = "file-block";
+      fileDiv.innerHTML = `
+        <strong>Archivo:</strong> ${escapeHtml(file.filename)}
+        <pre><code>${escapeHtml(file.content)}</code></pre>
+      `;
 
-  content.appendChild(messageText)
-  content.appendChild(messageTime)
+      const createButton = document.createElement("button");
+      createButton.className = "generate-file-btn";
+      createButton.textContent = "Crear archivo";
+      createButton.addEventListener("click", () => {
+        if (vscode) {
+          vscode.postMessage({
+            command: "createFiles",
+            files: [{
+              filename: file.filename,
+              content: file.content
+            }]
+          });
+        }
+      });
 
-  messageDiv.appendChild(avatar)
-  messageDiv.appendChild(content)
+      fileDiv.appendChild(createButton);
+      content.appendChild(fileDiv);
+    });
+  }
 
-  return messageDiv
+  const messageTime = document.createElement("div");
+  messageTime.className = "message-time";
+  messageTime.textContent = formatTime(timestamp);
+
+  content.appendChild(messageTime);
+
+  messageDiv.appendChild(avatar);
+  messageDiv.appendChild(content);
+
+  return messageDiv;
 }
 
 function getAIIcon() {
@@ -875,10 +907,10 @@ function clearMessagesUI() {
 
 function loadMessagesIntoUI() {
   messageHistory.forEach((msg) => {
-    const messageElement = createMessageElement(msg.text, msg.sender, new Date(msg.timestamp))
-    messagesArea.appendChild(messageElement)
-  })
-  scrollToBottom(messagesArea)
+    const messageElement = createMessageElement(msg, msg.sender, new Date(msg.timestamp));
+    messagesArea.appendChild(messageElement);
+  });
+  scrollToBottom(messagesArea);
 }
 
 // Acciones de botones

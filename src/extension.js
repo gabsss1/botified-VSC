@@ -60,6 +60,47 @@ export function activate(context) {
                 });
               }
               break;
+              
+            case "createFiles":
+              try {
+                if (!vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0) {
+                  vscode.window.showErrorMessage("No hay un workspace abierto.");
+                  return;
+                }
+
+                const workspaceUri = vscode.workspace.workspaceFolders[0].uri;
+
+                for (const file of message.files) {
+                  // Divide la ruta en partes
+                  const pathParts = file.filename.split("/");
+                  const fileName = pathParts.pop(); // El nombre del archivo
+                  const folderParts = pathParts; // Las carpetas intermedias
+
+                  // Construir el URI de la carpeta destino
+                  let targetFolderUri = workspaceUri;
+                  for (const folder of folderParts) {
+                    targetFolderUri = vscode.Uri.joinPath(targetFolderUri, folder);
+                  }
+
+                  // Crear carpeta si no existe
+                  await vscode.workspace.fs.createDirectory(targetFolderUri);
+
+                  // Crear el archivo dentro de esa carpeta
+                  const fileUri = vscode.Uri.joinPath(targetFolderUri, fileName);
+                  await vscode.workspace.fs.writeFile(
+                    fileUri,
+                    Buffer.from(file.content, "utf8")
+                  );
+                }
+
+                vscode.window.showInformationMessage(
+                  `Se crearon ${message.files.length} archivo(s) en ${workspaceUri.fsPath}.`
+                );
+              } catch (error) {
+                console.error("Error creando archivos:", error);
+                vscode.window.showErrorMessage("Ocurrió un error al crear los archivos.");
+              }
+              break;
           }
         },
         undefined,
